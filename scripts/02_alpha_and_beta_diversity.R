@@ -44,7 +44,7 @@
 # Set working directory
 # Load required R packages and source custom functions.
 
-setwd(dir = "/projects/caeg/people/ngm902/apps/repos/tjornin-microbial-analysis")
+setwd(dir = "")
 source("libs/lib.R")
 
 # Uncomment to install required packages
@@ -68,29 +68,6 @@ library(vegan)
 
 cdata <- read.table(file = "data/metadata.txt", sep = "\t", header = T)
 
-# stats_derep <- read.table(file = "data/all.stats-derep-summary.tsv.gz", sep = "\t", header = T) %>%
-#     mutate(step = "derep") %>%
-#     select(label, num_seqs, step)
-
-# stats_initial <- read.table(file = "data/all.stats-initial-summary.tsv.gz", sep = "\t", header = T) %>%
-#     mutate(step = "initial") %>%
-#     select(label, num_seqs, step)
-
-stats_derep <- read.table(file = "data/all.stats-derep-summary.tsv.gz", sep = "\t", header = T) %>%
-    rename(num_seqs = derep) %>%
-    select(label, num_seqs, step)
-
-stats_initial <- read.table(file = "data/all.stats-initial-summary.tsv.gz", sep = "\t", header = T) %>%
-    mutate(step = "initial") %>%
-    select(label, num_seqs, step)
-
-stats_derep %>% head()
-cdata %>%
-    left_join()
-rbind(stats_derep, stats_initial) %>%
-    left_join(cdata) %>% head()
-
-
 # ----------------------------------------------------------------------
 # (3) Exploratory plots of read counts and species richness
 # ----------------------------------------------------------------------
@@ -98,8 +75,8 @@ rbind(stats_derep, stats_initial) %>%
 # species richness, and relative abundance by domain.
 # Outputs: plots/fig_SX1.png
 
-plotA <- rbind(stats_derep, stats_initial) %>%
-    left_join(cdata) %>%
+plotA <- cdata %>%
+    pivot_longer(cols = c("initial", "derep"), names_to = "step", values_to = "num_seqs") %>%
     ggplot(., aes(x = y_bp, y = num_seqs, color = step))+
         geom_point()+
         geom_line()+
@@ -270,19 +247,18 @@ nreads <- distance_matrix %>%
     rownames() %>%
     as.data.frame() %>%
     rename(label = 1) %>%
-    left_join(stats_derep) %>%
-    mutate(num_seqs = ifelse(is.na(num_seqs), mean(num_seqs, na.rm = TRUE), num_seqs))
+    left_join(cdata %>% select(label, derep)) 
 
-permanova <- adonis2(distance_matrix ~ nreads$num_seqs, permutations = 999, dist = "bray")
+permanova <- adonis2(distance_matrix ~ nreads$derep, permutations = 999, dist = "bray")
 permanova
 # Permutation test for adonis under reduced model
 # Terms added sequentially (first to last)
 # Permutation: free
 # Number of permutations: 999
 
-# adonis2(formula = distance_matrix ~ nreads$num_seqs, permutations = 999, dist = "bray")
+# adonis2(formula = distance_matrix ~ nreads$derep, permutations = 999, dist = "bray")
 #                 Df SumOfSqs      R2      F Pr(>F)    
-# nreads$num_seqs  1   1.6789 0.09227 6.0986  0.001 ***
+# nreads$derep    1   1.6789 0.09227 6.0986  0.001 ***
 # Residual        60  16.5170 0.90773                  
 # Total           61  18.1958 1.00000                  
 # ---
@@ -350,10 +326,9 @@ names(clust_cols) <- clusts
 
 # Plot NMDS ordination and relationship of MDS1 axis with sample age
 plotA <- nmdspoints_clus %>%
-    left_join(stats_derep %>% select(label, num_seqs)) %>%
-    mutate(num_seqs = ifelse(label == "CGG3017468", 1e8, num_seqs)) %>% # parche temporal
+    left_join(cdata %>% select(label, derep)) %>% 
     ggplot(., aes(MDS1, MDS2))+
-        geom_point(aes(size = num_seqs, fill = as.factor(cluster_opt)), shape = 21)+
+        geom_point(aes(size = derep, fill = as.factor(cluster_opt)), shape = 21)+
         geom_text_repel(aes(label = round(y_bp, 0)), size = 3)+
         scale_fill_manual(values = clust_cols)+
         guides(fill = "none")+

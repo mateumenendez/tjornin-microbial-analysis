@@ -1,3 +1,4 @@
+library(tidyverse)
 custom_theme <- theme(strip.background = element_rect(fill = "white", color = "black") , strip.text.y.right = element_text(angle = 0))
 theme_set(theme_bw()+custom_theme)
 
@@ -81,3 +82,88 @@ filt_physeq <- function(physeq, glom = NULL, min_counts = 10000, ncounts = 3, ns
   })
 }
 
+
+get_st <- function(physeq, glom = NULL, min_counts = 0, ncounts = 3, nsites = 0.2, vcoeff = 3, mean_prop_thresh = 1e-5, norm = TRUE, norm_out = TRUE) {
+  
+  ## Glom taxa to a given taxonomic level ##
+  suppressMessages({
+    if (!is.null(glom)) {
+      cat(paste("Tax glomming to:", glom, "\n"))
+      physeq <- speedyseq::tax_glom(physeq, taxrank = glom)
+    }
+
+    ## Filter samples by minimum counts ##
+    cat(paste("Filtering samples with at least", min_counts, "counts...\n"))
+    physeq_filt <- prune_samples(sample_sums(physeq) > min_counts, physeq)
+    cat("Total samples:", nsamples(physeq_filt), "\n")
+
+    ## Filter taxa by occurrence ##
+    if (nsites > 0){
+    cat(paste("Filtering taxa not seen at least", ncounts, "counts in", nsites * nsamples(physeq_filt), "samples...\n"))
+    physeq_filt <- prune_taxa(taxa_sums(physeq_filt) > 0, physeq_filt)
+    physeq_filt <- filter_taxa(physeq_filt, function(x) sum(x > ncounts) > (nsites * length(x)), TRUE)
+    physeq_filt <- prune_samples(sample_sums(physeq_filt) > min_counts, physeq_filt)
+    }
+
+    ## Scale data ##
+    if (norm == "min") {
+      # Scale to the median of the sample depth
+      cat("Scaling to min sample depth", "\n")
+      total <- min(sample_sums(physeq_filt))
+      cat("Min abun",total, "\n")
+      standf <- function(x, t = total) round(t * (x / sum(x)))
+      physeq_filt_m <- transform_sample_counts(physeq_filt, standf)
+    } else if (norm == "median") {
+      # Scale to the median of the sample depth
+      cat("Scaling to median sample depth", "\n")
+      total <- median(sample_sums(physeq_filt))
+      standf <- function(x, t = total) round(t * (x / sum(x)))
+      physeq_filt_m <- transform_sample_counts(physeq_filt, standf)
+    } else {
+      cat("No scaling", "\n")
+      physeq_filt_m <- physeq_filt
+    }
+
+    ## Filter by coefficient of variation ##
+    if (is.null(vcoeff)) {
+      vcoeff <- speedyseq::psmelt(physeq_filt_m) |>
+        filter(Abundance > 0) |>
+        as_tibble() |>
+        group_by(OTU) |>
+        summarise(cv = sd(Abundance) / mean(Abundance)) |>
+        pull(cv) |>
+        median(na.rm=TRUE)
+      cat(paste("WARNING: Using median CV of all OGUs\n"))
+      cat(paste("Filtering taxa with a lower CV than", vcoeff, "...\n"))
+    } else {
+      cat(paste("Filtering taxa with a lower CV than", vcoeff, "...\n"))
+    }
+    physeq_filt_v <- filter_taxa(physeq_filt_m, function(x) sd(x) / mean(x) > vcoeff, TRUE)
+    # physeq_filt <- prune_taxa(taxa_names(physeq_filt) %in% taxa_names(physeq_filt_v), physeq_filt)
+
+    # remove those with very low abundance across samples
+    cat(paste("Filtering taxa with a mean proportion <=", mean_prop_thresh, "\n"))
+    tax_filt <- speedyseq::psmelt(physeq_filt_v) |>
+      dplyr::select(Sample, OTU, Abundance) |> 
+      filter(Abundance > 0) |>
+      group_by(Sample) |>
+      mutate(prop = Abundance / sum(Abundance)) |>
+      ungroup() |>
+      group_by(OTU) |>
+      summarise(prop1=sum(prop), mean_prop = sum(prop) / nsamples(physeq_filt_v)) |>
+      ungroup() |>
+      filter(mean_prop >= mean_prop_thresh) |>
+      pull(OTU)
+    if (norm_out == TRUE){ ## MODIFIED TO RETURN THE NORMALIZED ONE
+      cat("Returning scaled data", "\n")
+      physeq_filt <- prune_taxa(tax_filt, physeq_filt_v) 
+    } else {
+      cat("Returning not scaled data", "\n")
+      physeq_filt <- prune_taxa(tax_filt, physeq_filt)
+    } 
+    physeq_filt <- prune_taxa(taxa_sums(physeq_filt) > 0, physeq_filt)
+    physeq_filt <- prune_samples(sample_sums(physeq_filt) > 0, physeq_filt)
+    cat(paste0("Kept ", ntaxa(physeq_filt), " taxa (Original:", ntaxa(physeq), ") summing a total of ", sum(taxa_sums(physeq_filt)), " counts (Original:", sum(taxa_sums(physeq)), ", ", round(sum(taxa_sums(physeq_filt))/sum(taxa_sums(physeq))*100,1), "% kept -only valid when non normalizing output-)\n"))
+    return(physeq_filt)
+  })
+}

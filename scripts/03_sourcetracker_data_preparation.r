@@ -24,7 +24,7 @@ library(biomformat)
 library(phyloseq)
 library(showtext)
 
-setwd(dir = "/projects/caeg/people/ngm902/apps/repos/tjornin-microbial-analysis")
+setwd(dir = "")
 
 
 # ----------------------------------------------------------------------
@@ -91,86 +91,7 @@ sink_names <- sample_names(st_sink)
 # (3) Load source data (environmental samples)
 # ----------------------------------------------------------------------
 
-# source_cdata <- read_tsv("data/sourcetracker/med-biomes-download.txt")
-
-# # Simplify biome annotations and tag as "source"
-# source_cdata_short <- source_cdata %>%
-#   mutate(biome_subclass = case_when(
-#     biome_subclass == "root:Environmental:Aquatic:Marine:Atlantic ocean" & latitude > 40 ~ paste(biome_subclass, "North"),
-#     biome_subclass == "root:Environmental:Aquatic:Marine:Atlantic ocean" & (latitude >= 20 & latitude <= 40) ~ paste(biome_subclass, "Central"),
-#     biome_subclass == "root:Environmental:Aquatic:Marine:Atlantic ocean" & latitude < 20 ~ paste(biome_subclass, "South"),
-#     TRUE ~ biome_subclass
-#   )) %>%
-#   select(label = run_accession, biome, biome_class, biome_subclass) %>%
-#   mutate(SourceSink = "source")
-
-# # Load and filter LCA assignments
-# source_data_lca <- read_tsv("data/sourcetracker/tp-lca.summary.tsv.gz") %>%
-#   filter(rank == "subspecies") %>%
-#   separate(tax_path, into = c("root", "domain", "lineage", "kingdom", "phylum", "class", "order", "family", "genus", "species", "subspecie"), sep = ";") %>%
-#   rename(nreads = n_reads)
-
-# # Load mapping statistics
-# source_data_stats <- read_tsv("data/sourcetracker/tp-mapping-filtered.summary.tsv.gz") %>%
-#   filter(norm_entropy > 0.6, breadth > 0.01, breadth_exp_ratio >= 0.75) %>%
-#   mutate(name = paste0("S__", reference)) %>%
-#   mutate(abundance = ifelse(tax_abund_tad == 0, tax_abund_read, tax_abund_tad))
-
-# # Merge source tables
-# source_data <- source_data_lca %>%
-#   select(-nreads, -abundance) %>%
-#   inner_join(source_data_stats) %>%
-#   select(label, reference, abundance)
-
-# # Filter bacterial and archaeal species
-# source_data_sp <- source_data_lca %>%
-#   select(-nreads, -abundance) %>%
-#   inner_join(source_data_stats) %>%
-#   filter(domain %in% c("d__Bacteria", "d__Archaea")) %>%
-#   filter(
-#     species != "s__Sinsheimervirus   vOTU_00217951",
-#     label != "SRR5149189"
-#   ) %>%
-#   filter(!(genus %in% c("g__DTU015", "g__NEW_02"))) %>%
-#   group_by(label, domain, species) %>%
-#   summarise(abundance = sum(abundance)) %>%
-#   ungroup()
-
-# # Construct OTU, taxonomy and metadata tables for source data
-# st_df <- source_data_sp %>%
-#   select(-domain) %>%
-#   pivot_wider(names_from = species, values_from = abundance, values_fill = 0) %>%
-#   as.data.frame() %>%
-#   column_to_rownames("label")
-
-# st_taxonomy <- source_data_lca %>%
-#   select(domain, phylum, class, order, family, genus, species) %>%
-#   distinct() %>%
-#   inner_join(source_data_sp %>% select(domain, species) %>% distinct()) %>%
-#   mutate(reference = species) %>%
-#   as.data.frame() %>%
-#   column_to_rownames("reference")
-
-# st_cdata <- source_cdata_short %>%
-#   as.data.frame() %>%
-#   mutate(clabel = label) %>%
-#   column_to_rownames("clabel")
-
-# # Create phyloseq object for source data and save to disk
-# st_source <- phyloseq(
-#     otu_table(st_df, taxa_are_rows = FALSE),
-#     tax_table(as.matrix(st_taxonomy)),
-#     sample_data(st_cdata)
-# )
-
-# # ensure output directory exists and persist the object
-
-# saveRDS(st_source, file = "data/sourcetracker/st_source.rds", compress = TRUE)
-
-
 st_source <- readRDS("data/sourcetracker/st_source.rds")
-
-
 
 # ----------------------------------------------------------------------
 # (4) Source data cleaning and normalization

@@ -32,7 +32,7 @@ library(ggdensity)
 library(ggh4x)
 
 
-setwd(dir = "/projects/caeg/people/ngm902/apps/repos/tjornin-microbial-analysis")
+setwd(dir = "")
 
 # Load auxiliary functions
 source("libs/lib.R")

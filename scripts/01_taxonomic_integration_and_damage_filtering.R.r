@@ -45,14 +45,12 @@
 # ----------------------------------------------------------------------
 # Load required packages and source custom functions.
 
-setwd(dir = "/projects/caeg/people/ngm902/apps/repos/tjornin-microbial-analysis")
+setwd(dir = "")
 source("libs/dmg.R")
 source("libs/lib.R")
 
 library(tidyverse)
 library(phyloseq)
-
-
 
 # ----------------------------------------------------------------------
 # (2) Load metadata and LCA taxonomic assignments

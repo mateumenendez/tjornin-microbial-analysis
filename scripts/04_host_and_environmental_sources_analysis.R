@@ -46,7 +46,7 @@
 # ----------------------------------------------------------------------
 # Load required packages and custom functions.
 
-setwd(dir = "/projects/caeg/people/ngm902/apps/repos/tjornin-microbial-analysis")
+setwd(dir = "")
 source("libs/lib.R")
 
 library(tidyverse)
