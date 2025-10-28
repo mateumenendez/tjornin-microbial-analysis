@@ -61,7 +61,7 @@ The microbial sedaDNA analyses focus on:
 │
 └── libs/
      └─ Additional functions.
-```
+
 </pre>
 
 
@@ -89,12 +89,12 @@ This scripts (```03_sourcetracker_data_preparation.R```, ```03_sourcetracker_exe
 
 The workflow combines subspecies-level taxonomic profiles with curated reference metadata to identify taxa associated with specific hosts (e.g., Homo sapiens, livestock) and environmental niches. Viral genomes are classified using IMG/VR ecosystem annotations, allowing the identification of engineered, terrestrial, and aquatic sources.
 
-For bacterial and archaeal components, meta-SourceTracker analyses were performed using modern metagenomic reference datasets from MGnify and ENA, processed with identical pipelines to the ancient data. Estimated proportions from SourceTracker are integrated with host and viral classifications to reconstruct changing environmental and host contributions through time.
+For bacterial and archaeal components, SourceTracker2 (Knights et al., 2011) analyses were performed using modern metagenomic reference datasets, processed with identical pipelines to the ancient data. Estimated proportions from SourceTracker are integrated with host and viral classifications to reconstruct changing environmental and host contributions through time.
 
 Outputs summarize:
-	•	The temporal abundance of host-associated taxa.
-	•	The relative contribution of viral ecological sources (IMG/VR).
-	•	SourceTracker-inferred bacterial and archaeal biome proportions.
+-	The temporal abundance of host-associated taxa.
+-	The relative contribution of viral ecological sources (IMG/VR).
+-	SourceTracker-inferred bacterial and archaeal biome proportions.
 
 
 ## Functional profiling
