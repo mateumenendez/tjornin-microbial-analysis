@@ -167,3 +167,10 @@ get_st <- function(physeq, glom = NULL, min_counts = 0, ncounts = 3, nsites = 0.
     return(physeq_filt)
   })
 }
+
+
+avg_silhouette <- function(hc, k, dist_matrix) {
+  clusters <- cutree(hc, k)
+  silhouette_values <- cluster::silhouette(clusters, dist_matrix)
+  mean(silhouette_values[, 3])
+}
